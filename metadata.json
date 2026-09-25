@@ -1,0 +1,8 @@
+{
+  "name": "Remix PharmAlert",
+  "description": "Rule-based inventory alert system for SME pharmacies in Sri Lanka anticipating dengue demand surges, rebuilt with Flutter and Firebase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

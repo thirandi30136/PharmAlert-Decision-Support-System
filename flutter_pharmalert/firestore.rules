@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Pharmacies collection
+    match /pharmacies/{pharmacyId} {
+      allow read, write: if isAuthenticated();
+      
+      // Medicines subcollection
+      match /medicines/{medicineId} {
+        allow read, write: if isAuthenticated();
+      }
+      
+      // Alerts subcollection
+      match /alerts/{alertId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      // Settings and configurations
+      match /settings/{settingId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    // Environmental surveillance signals by district (e.g. Colombo)
+    match /districts/{districtId} {
+      allow read: if true; // Public surveillance data readable by all SME pharmacies
+      allow write: if isAuthenticated();
+    }
+  }
+}
