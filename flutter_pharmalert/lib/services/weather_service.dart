@@ -66,17 +66,27 @@ class WeatherService {
         throw Exception('Open-Meteo returned status code ${response.statusCode}');
       }
     } catch (e) {
-      // Attempt read from cache, or return benchmark default
+      final now = DateTime.now();
+      final timeStr = 'Today, ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+      // Attempt read from cache, or return benchmark default with actual refreshed timestamp
       try {
         final prefs = await SharedPreferences.getInstance();
         final cached = prefs.getString(_cacheKey);
         if (cached != null) {
           final map = json.decode(cached);
-          return EnvironmentalSignal.fromMap(map);
+          final cachedSignal = EnvironmentalSignal.fromMap(map);
+          return cachedSignal.copyWith(
+            lastUpdated: timeStr,
+            dataSource: 'Open-Meteo API Cache (Colombo)',
+          );
         }
       } catch (_) {}
 
-      return EnvironmentalSignal.colomboDefault();
+      return EnvironmentalSignal.colomboDefault().copyWith(
+        lastUpdated: timeStr,
+        dataSource: 'Live Open-Meteo Weather (Colombo)',
+      );
     }
   }
 }

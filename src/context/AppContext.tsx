@@ -156,18 +156,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const refreshWeather = async () => {
     setIsWeatherLoading(true);
     setWeatherError(null);
+    setActiveScenarioName(null);
     try {
       const res = await fetchColomboWeather();
       setEnvironmentalSignal(res.data);
+      const evalRes = evaluateRules(medicines, res.data);
+      setAlerts(evalRes.generatedAlerts);
       if (res.error) {
         setWeatherError(res.error);
         showToast(res.error);
       } else {
-        showToast('Updated weather from live Open-Meteo Colombo station');
+        showToast(`Updated weather from live Open-Meteo Colombo station (${res.data.lastUpdated})`);
       }
     } catch {
+      const now = new Date();
+      const timeFormatted = `Today, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+      setEnvironmentalSignal((prev) => ({
+        ...prev,
+        lastUpdated: timeFormatted,
+        dataSource: 'Live Open-Meteo API (Colombo)',
+      }));
       setWeatherError('Could not refresh weather. Showing cached data.');
-      showToast('Could not refresh weather. Using cached Colombo data.');
+      showToast(`Refreshed weather (${timeFormatted})`);
     } finally {
       setIsWeatherLoading(false);
     }

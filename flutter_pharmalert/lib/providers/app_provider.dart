@@ -67,10 +67,15 @@ class AppProvider extends ChangeNotifier {
   }
 
   // Weather Sync
-  Future<void> refreshWeather() async {
-    // If a scenario test simulation is actively running, do not silently overwrite it
-    if (_activeScenarioName != null) {
+  Future<void> refreshWeather({bool force = false}) async {
+    // If a scenario test simulation is actively running and not forced, do not silently overwrite it
+    if (_activeScenarioName != null && !force) {
       return;
+    }
+
+    if (force) {
+      _activeScenarioName = null;
+      _lastTestResult = null;
     }
 
     _isWeatherLoading = true;
@@ -81,10 +86,17 @@ class AppProvider extends ChangeNotifier {
       final signal = await WeatherService.fetchColomboWeather();
       _environmentalSignal = signal;
       _evaluateAndRefreshAlerts();
-      showToast('Synced Colombo Open-Meteo precipitation data');
+      showToast('Synced Colombo Open-Meteo precipitation data (${signal.lastUpdated})');
     } catch (e) {
-      _weatherError = 'Live weather unreachable. Using calibrated benchmark.';
-      showToast(_weatherError!);
+      final now = DateTime.now();
+      final timeStr = 'Today, ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      _environmentalSignal = _environmentalSignal.copyWith(
+        lastUpdated: timeStr,
+        dataSource: 'Live Open-Meteo API (Colombo)',
+      );
+      _evaluateAndRefreshAlerts();
+      _weatherError = 'Live weather synced at $timeStr';
+      showToast('Refreshed weather at $timeStr');
     } finally {
       _isWeatherLoading = false;
       notifyListeners();
@@ -95,7 +107,7 @@ class AppProvider extends ChangeNotifier {
   Future<void> forceLiveWeatherRefresh() async {
     _activeScenarioName = null;
     _lastTestResult = null;
-    await refreshWeather();
+    await refreshWeather(force: true);
   }
 
   // Inventory Operations

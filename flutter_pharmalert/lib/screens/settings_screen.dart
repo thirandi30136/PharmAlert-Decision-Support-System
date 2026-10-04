@@ -211,7 +211,7 @@ class SettingsScreen extends StatelessWidget {
                   Text('Last Updated: ${env.lastUpdated}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                   const SizedBox(height: 10),
                   OutlinedButton.icon(
-                    onPressed: provider.isWeatherLoading ? null : provider.refreshWeather,
+                    onPressed: provider.isWeatherLoading ? null : provider.forceLiveWeatherRefresh,
                     icon: provider.isWeatherLoading
                         ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.sync, size: 16),
