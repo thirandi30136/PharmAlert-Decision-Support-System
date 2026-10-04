@@ -16,8 +16,11 @@ class DailyRainfall {
 
 class EnvironmentalSignal {
   final String district;
-  final double threeDayRainfallMm;
-  final double rainfallThresholdMm; // 50mm
+  final double sevenDayRainfallMm;
+  // Compatibility getter
+  double get threeDayRainfallMm => sevenDayRainfallMm;
+
+  final double rainfallThresholdMm; // 50 mm over 7 days
   final int monitoringLagWeeks; // 10 weeks
   final double searchTrendGrowthPercent; // e.g. +40%
   final double searchTrendThresholdPercent; // +30%
@@ -30,7 +33,7 @@ class EnvironmentalSignal {
 
   const EnvironmentalSignal({
     required this.district,
-    required this.threeDayRainfallMm,
+    required this.sevenDayRainfallMm,
     this.rainfallThresholdMm = 50.0,
     this.monitoringLagWeeks = 10,
     required this.searchTrendGrowthPercent,
@@ -45,6 +48,7 @@ class EnvironmentalSignal {
 
   EnvironmentalSignal copyWith({
     String? district,
+    double? sevenDayRainfallMm,
     double? threeDayRainfallMm,
     double? rainfallThresholdMm,
     int? monitoringLagWeeks,
@@ -57,9 +61,10 @@ class EnvironmentalSignal {
     String? lastUpdated,
     String? dataSource,
   }) {
+    final rain = sevenDayRainfallMm ?? threeDayRainfallMm ?? this.sevenDayRainfallMm;
     return EnvironmentalSignal(
       district: district ?? this.district,
-      threeDayRainfallMm: threeDayRainfallMm ?? this.threeDayRainfallMm,
+      sevenDayRainfallMm: rain,
       rainfallThresholdMm: rainfallThresholdMm ?? this.rainfallThresholdMm,
       monitoringLagWeeks: monitoringLagWeeks ?? this.monitoringLagWeeks,
       searchTrendGrowthPercent: searchTrendGrowthPercent ?? this.searchTrendGrowthPercent,
@@ -76,7 +81,8 @@ class EnvironmentalSignal {
   Map<String, dynamic> toMap() {
     return {
       'district': district,
-      'threeDayRainfallMm': threeDayRainfallMm,
+      'sevenDayRainfallMm': sevenDayRainfallMm,
+      'threeDayRainfallMm': sevenDayRainfallMm,
       'rainfallThresholdMm': rainfallThresholdMm,
       'monitoringLagWeeks': monitoringLagWeeks,
       'searchTrendGrowthPercent': searchTrendGrowthPercent,
@@ -91,9 +97,10 @@ class EnvironmentalSignal {
   }
 
   factory EnvironmentalSignal.fromMap(Map<String, dynamic> map) {
+    final rain = (map['sevenDayRainfallMm'] ?? map['threeDayRainfallMm'] as num?)?.toDouble() ?? 60.0;
     return EnvironmentalSignal(
       district: map['district'] ?? 'Colombo',
-      threeDayRainfallMm: (map['threeDayRainfallMm'] as num?)?.toDouble() ?? 60.0,
+      sevenDayRainfallMm: rain,
       rainfallThresholdMm: (map['rainfallThresholdMm'] as num?)?.toDouble() ?? 50.0,
       monitoringLagWeeks: (map['monitoringLagWeeks'] as num?)?.toInt() ?? 10,
       searchTrendGrowthPercent: (map['searchTrendGrowthPercent'] as num?)?.toDouble() ?? 40.0,
@@ -112,7 +119,7 @@ class EnvironmentalSignal {
   static EnvironmentalSignal colomboDefault() {
     return const EnvironmentalSignal(
       district: 'Colombo',
-      threeDayRainfallMm: 60.0,
+      sevenDayRainfallMm: 60.0,
       rainfallThresholdMm: 50.0,
       monitoringLagWeeks: 10,
       searchTrendGrowthPercent: 40.0,
@@ -121,9 +128,13 @@ class EnvironmentalSignal {
       activeMonitoringFlag: true,
       monitoringFlagWeeksElapsed: 10,
       dailyRainfall: [
-        DailyRainfall(day: 'Sat', amountMm: 18.0),
-        DailyRainfall(day: 'Sun', amountMm: 26.0),
-        DailyRainfall(day: 'Mon', amountMm: 16.0),
+        DailyRainfall(day: 'Mon', amountMm: 8.0),
+        DailyRainfall(day: 'Tue', amountMm: 12.0),
+        DailyRainfall(day: 'Wed', amountMm: 6.0),
+        DailyRainfall(day: 'Thu', amountMm: 10.0),
+        DailyRainfall(day: 'Fri', amountMm: 8.0),
+        DailyRainfall(day: 'Sat', amountMm: 10.0),
+        DailyRainfall(day: 'Sun', amountMm: 6.0),
       ],
       lastUpdated: 'Today, 06:00',
       dataSource: 'Open-Meteo & Google Trends (Colombo)',

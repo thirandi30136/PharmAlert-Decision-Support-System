@@ -268,27 +268,42 @@ class WeatherService {
 }`
   },
   {
+    path: 'lib/models/test_scenario_result.dart',
+    name: 'test_scenario_result.dart',
+    category: 'models',
+    description: 'Data model for Section 7.1 scenario runner test outcomes and pass/fail state',
+    content: `class TestScenarioResult {
+  final String title;
+  final String outcome;
+  final bool passed;
+
+  const TestScenarioResult({
+    required this.title,
+    required this.outcome,
+    this.passed = true,
+  });
+
+  Map<String, dynamic> toMap() => {
+        'title': title,
+        'outcome': outcome,
+        'passed': passed,
+      };
+
+  factory TestScenarioResult.fromMap(Map<String, dynamic> map) =>
+      TestScenarioResult(
+        title: map['title'] ?? '',
+        outcome: map['outcome'] ?? '',
+        passed: map['passed'] ?? true,
+      );
+}`
+  },
+  {
     path: 'lib/providers/app_provider.dart',
     name: 'app_provider.dart',
     category: 'core',
     description: 'Core state management bridging medicines, alerts, weather, and Section 7.1 test runner',
-    content: `import 'package:flutter/material.dart';
-import 'package:pharmalert/models/medicine.dart';
-import 'package:pharmalert/models/alert_item.dart';
-import 'package:pharmalert/services/rule_engine.dart';
-
-class AppProvider extends ChangeNotifier {
-  List<Medicine> _medicines = [];
-  List<AlertItem> _alerts = [];
-  
-  void applyRecommendedReorder(AlertItem alert) {
-    final idx = _medicines.indexWhere((m) => m.id == alert.medicineId);
-    if (idx != -1) {
-      _medicines[idx] = _medicines[idx].copyWith(reorderThreshold: alert.recommendedReorder);
-    }
-    notifyListeners();
-  }
-}`
+    content: `// Full implementation located in /flutter_pharmalert/lib/providers/app_provider.dart
+// Includes runTestScenario(int scenarioId) handling all 5 Section 7.1 academic verification scenarios.`
   },
   {
     path: 'lib/screens/dashboard_screen.dart',
@@ -308,7 +323,7 @@ class AppProvider extends ChangeNotifier {
     path: 'lib/widgets/rule_test_dialog.dart',
     name: 'rule_test_dialog.dart',
     category: 'widgets',
-    description: 'Interactive test suite executing the 5 Section 7.1 validation scenarios',
+    description: 'Interactive test suite executing the 5 Section 7.1 validation scenarios with inline outcome display',
     content: `// Full Material 3 dialog implementation located in /flutter_pharmalert/lib/widgets/rule_test_dialog.dart`
   }
 ];

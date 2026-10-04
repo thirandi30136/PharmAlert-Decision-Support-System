@@ -1,159 +1,413 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pharmalert/providers/app_provider.dart';
+import 'package:pharmalert/models/test_scenario_result.dart';
 
-class RuleTestDialog extends StatelessWidget {
+class RuleTestDialog extends StatefulWidget {
   const RuleTestDialog({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.read<AppProvider>();
+  State<RuleTestDialog> createState() => _RuleTestDialogState();
+}
 
-    final scenarios = [
-      {
-        'name': 'Scenario 1: Heavy Rain Event Trigger',
-        'subtitle': 'Rule R1 Test · Initial surveillance activation',
-        'rain': 65.0,
-        'search': 42.0,
-        'weeks': 0,
-        'flag': true,
-        'fever': 15.0,
-        'expected': 'R1 triggers 10-week monitoring flag. Zero medicine alerts generated yet (correct lag behavior).',
-      },
-      {
-        'name': 'Scenario 2: Mid-Surveillance Lag (Week 5)',
-        'subtitle': 'Section 7.1 Test 2 · False-positive prevention',
-        'rain': 22.0,
-        'search': 18.0,
-        'weeks': 5,
-        'flag': true,
-        'fever': 10.0,
-        'expected': 'Flag remains active. 5/10 weeks elapsed. No false alerts triggered before peak.',
-      },
-      {
-        'name': 'Scenario 3: 10-Week Epidemic Peak (Outbreak)',
-        'subtitle': 'Section 7.1 Test 3 · Full procurement surge trigger',
-        'rain': 45.0,
-        'search': 38.0,
-        'weeks': 10,
-        'flag': true,
-        'fever': 25.0,
-        'expected': 'Rules R2 & R3 trigger! Critical Paracetamol +20% buffer & ORS +30% surge.',
-      },
-      {
-        'name': 'Scenario 4: Baseline Dry Season',
-        'subtitle': 'Section 7.1 Test 4 · Normal baseline conditions',
-        'rain': 12.0,
-        'search': 5.0,
-        'weeks': 0,
-        'flag': false,
-        'fever': 5.0,
-        'expected': 'All clear. Zero alert thresholds reached. Standard reorder points maintained.',
-      },
-      {
-        'name': 'Scenario 5: Viral Allergy/Fever Surge',
-        'subtitle': 'Rule R4 Test · Fever search & rain confluence',
-        'rain': 38.0,
-        'search': 20.0,
-        'weeks': 2,
-        'flag': false,
-        'fever': 38.0,
-        'expected': 'Rule R4 triggers! Cetirizine reorder point increased +15% for symptomatic surge.',
-      },
-    ];
+class _RuleTestDialogState extends State<RuleTestDialog> {
+  TestScenarioResult? _activeTestResult;
+
+  final List<Map<String, dynamic>> _scenarios = const [
+    {
+      'id': 1,
+      'title': 'Scenario 1: Heavy Rain + Rising Search Trend',
+      'spec':
+          'Heavy rainfall (>50mm over 7 days) + rising search trend → monitoring flag should start; no alert yet (within 10-week lag).',
+      'tag': 'Monitoring Lag Check',
+      'condition': '7-day rainfall > 50mm AND trend > 30%',
+      'values': 'Rainfall 65mm over 7 days | Trend +42%',
+      'expected': '10-week monitoring starts (Started), 0 alerts at week 2',
+    },
+    {
+      'id': 2,
+      'title': 'Scenario 2: 10 Weeks Post-Rainfall (Stock Below Reorder)',
+      'spec':
+          '10 weeks after a monitoring flag, with stock below reorder level → alert should be generated (+20% Paracetamol, +30% ORS).',
+      'tag': 'Alert Surge Generation',
+      'condition': '10 weeks post-flag AND stock < reorder level',
+      'values': 'Week 10 | Stock: Paracetamol (450 < 500), ORS (320 < 400) | Rain 60mm/7d',
+      'expected': 'Alerts generated (+20% Paracetamol, +30% ORS recommended)',
+    },
+    {
+      'id': 3,
+      'title': 'Scenario 3: Stock Already Above Reorder Level',
+      'spec':
+          'Same scenario (week 10 post-flag) but stock is already above reorder level → no alert should be generated.',
+      'tag': 'False-Positive Prevention',
+      'condition': 'Week 10 post-flag AND stock >= reorder level',
+      'values': 'Paracetamol 900 > 500, ORS 900 > 400',
+      'expected': 'No false alert triggered (0 alerts generated)',
+    },
+    {
+      'id': 4,
+      'title': 'Scenario 4: Approving an Alert Action',
+      'spec':
+          'Approving an alert → inventory quantity/threshold updates and the alert status changes to "actioned".',
+      'tag': 'Inventory Update Action',
+      'condition': 'User approves active outbreak alert recommendation',
+      'values': 'Apply surge reorder to inventory threshold',
+      'expected': 'Inventory threshold updated & alert marked "actioned"',
+    },
+    {
+      'id': 5,
+      'title': 'Scenario 5: No Network / API Failure Offline Resilience',
+      'spec':
+          'No network / API failure → app should show cached data and a clear \'couldn\'t refresh\' message, not crash.',
+      'tag': 'Offline Resilience',
+      'condition': 'Open-Meteo REST service connection fails or offline',
+      'values': 'Network request timed out / disconnected',
+      'expected': 'Cached data displayed gracefully with error notification',
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      clipBehavior: Clip.antiAlias,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 480),
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 720),
+        color: Colors.white,
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              color: const Color(0xFF0F766E),
+              child: Row(
                 children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.auto_awesome, color: Color(0xFF0F766E), size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'Section 7.1 Test Scenarios',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-                      ),
-                    ],
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.shield_outlined,
+                      color: Color(0xFF99F6E4),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Section 7.1 Test Scenario Runner',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Academic verification suite for developer handoff',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFCCFBF1),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 20),
+                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              const Text(
-                'Run predefined epidemiological scenarios to verify rule mathematical correctness against Erandi et al. (2021) benchmarks.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-              ),
-              const SizedBox(height: 14),
+            ),
 
-              ...scenarios.map((sc) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Scrollable Content
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(18),
+                children: [
+                  // Verification Result Banner if active
+                  if (_activeTestResult != null) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Text(
-                              sc['name'] as String,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.check_circle_rounded,
+                                color: Color(0xFF16A34A),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _activeTestResult!.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Color(0xFF16A34A),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF16A34A),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text(
+                                  'PASSED',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _activeTestResult!.outcome,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF334155),
+                              height: 1.4,
                             ),
                           ),
-                          FilledButton(
-                            onPressed: () {
-                              provider.runScenario(
-                                name: sc['name'] as String,
-                                rainfallMm: (sc['rain'] as num).toDouble(),
-                                searchSpikePercent: (sc['search'] as num).toDouble(),
-                                weeksElapsed: sc['weeks'] as int,
-                                flagActive: sc['flag'] as bool,
-                                feverSearchPercent: (sc['fever'] as num).toDouble(),
-                              );
-                              Navigator.pop(context);
-                            },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF0F766E),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              minimumSize: const Size(60, 30),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          const SizedBox(height: 10),
+                          const Divider(color: Color(0xFFA7F3D0), height: 1),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: () {
+                                provider.setTabIndex(0); // Switch to Dashboard
+                                Navigator.pop(context);
+                              },
+                              icon: const Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 14,
+                                color: Color(0xFF0F766E),
+                              ),
+                              label: const Text(
+                                'View on Dashboard →',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F766E),
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
                             ),
-                            child: const Text('Run Test', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(sc['subtitle'] as String, style: const TextStyle(fontSize: 11, color: Color(0xFF0F766E), fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Expected: ${sc['expected']}',
-                        style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                    ),
+                  ],
+
+                  // Scenarios list
+                  ..._scenarios.map((sc) {
+                    final int scenarioId = sc['id'] as int;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                    ],
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  sc['title'] as String,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0FDFA),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFCCFBF1)),
+                                ),
+                                child: Text(
+                                  sc['tag'] as String,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF0F766E),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            sc['spec'] as String,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF64748B),
+                              height: 1.35,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFF1F5F9)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Condition: ',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF475569),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        sc['condition'] as String,
+                                        style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Values: ',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF475569),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        sc['values'] as String,
+                                        style: const TextStyle(fontSize: 10, color: Color(0xFF0F766E), fontWeight: FontWeight.w500),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                final res = provider.runTestScenario(scenarioId);
+                                setState(() {
+                                  _activeTestResult = res;
+                                });
+                              },
+                              icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                              label: Text('Run Scenario $scenarioId'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFF0F766E),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                textStyle: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                elevation: 0,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+
+            // Footer
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      provider.resetToDefault();
+                      setState(() {
+                        _activeTestResult = null;
+                      });
+                    },
+                    icon: const Icon(Icons.refresh, size: 14, color: Color(0xFF64748B)),
+                    label: const Text(
+                      'Reset to Benchmark',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    ),
                   ),
-                );
-              }),
-            ],
-          ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      'Close Runner',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF475569),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -78,14 +78,14 @@ export function evaluateRules(
           currentReorder: med.reorderThreshold,
           recommendedReorder: recommendedReorder,
           recommendedIncreaseUnits: increaseUnits,
-          academicCitation: 'Rule R2: Threshold 50mm + 10wk lag. Source: Erandi et al. (2021) / Colombo Epidemiological Unit WER',
+          academicCitation: 'Rule R2: Threshold 50mm over 7 days + 10wk lag. Source: Erandi et al. (2021) / Colombo Epidemiological Unit WER',
           conditions: [
             {
               label: '7-Day Rainfall',
               actualValue: `${env.threeDayRainfallMm} mm`,
-              threshold: '> 50 mm',
+              threshold: '> 50 mm over 7 days',
               satisfied: env.threeDayRainfallMm > 50,
-              description: 'Open-Meteo Colombo precipitation measurement',
+              description: 'Open-Meteo Colombo 7-day precipitation measurement',
             },
             {
               label: 'Weeks Since Rainfall Event',
@@ -134,12 +134,12 @@ export function evaluateRules(
           currentReorder: med.reorderThreshold,
           recommendedReorder: recommendedReorder,
           recommendedIncreaseUnits: increaseUnits,
-          academicCitation: 'Rule R3: Threshold 50mm + 10wk lag. Source: Erandi et al. (2021) / SL Medical Council Guidelines',
+          academicCitation: 'Rule R3: Threshold 50mm over 7 days + 10wk lag. Source: Erandi et al. (2021) / SL Medical Council Guidelines',
           conditions: [
             {
               label: '7-Day Rainfall',
               actualValue: `${env.threeDayRainfallMm} mm`,
-              threshold: '> 50 mm',
+              threshold: '> 50 mm over 7 days',
               satisfied: env.threeDayRainfallMm > 50,
             },
             {

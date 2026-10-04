@@ -78,3 +78,13 @@ firebase deploy --only firestore:rules
 # Run on connected device, emulator, or Chrome
 flutter run
 ```
+
+## 🧪 Section 7.1 Academic Test Scenarios
+
+The Flutter app includes an integrated **Section 7.1 Test Scenario Runner** accessible from the Dashboard AppBar flask/science icon or the Settings screen:
+1. **Scenario 1 (Heavy Rain + Trend Spike)**: Triggers R1 surveillance flag; verifies 10-week lag calibration (0 alerts generated at week 2).
+2. **Scenario 2 (10 Weeks Post-Rainfall, Low Stock)**: Reaches week 10; triggers Paracetamol +20% (500 -> 600) and ORS +30% (400 -> 520) surge alerts.
+3. **Scenario 3 (Stock Elevated Above Reorder)**: Tests false-positive prevention with high stock buffers (0 alerts generated).
+4. **Scenario 4 (Alert Approval Action)**: Approves active outbreak recommendation; automatically elevates inventory reorder threshold and flags alert as `actioned`.
+5. **Scenario 5 (Offline Network Resilience)**: Simulates Open-Meteo disconnection; demonstrates graceful local cache fallback without crashing.
+

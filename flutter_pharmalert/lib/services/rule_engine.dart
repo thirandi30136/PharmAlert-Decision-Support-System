@@ -19,6 +19,7 @@ class EvaluationResult {
 class RuleEngine {
   /// Port of Section 4 Epidemiological Decision Rules (Erandi et al., 2021)
   /// Evaluates inventory stock vs rainfall and search trend triggers.
+  /// Calibrated to 50 mm over 7 days threshold.
   static EvaluationResult evaluateRules({
     required List<Medicine> medicines,
     required EnvironmentalSignal env,
@@ -27,8 +28,8 @@ class RuleEngine {
   }) {
     final List<AlertItem> generatedAlerts = [];
 
-    // R1: 3-day rainfall > 50mm AND search trend up > 30% -> Start 10-week monitoring flag
-    final bool r1RainSatisfied = env.threeDayRainfallMm > 50.0;
+    // R1: 7-day rainfall > 50mm AND search trend up > 30% -> Start 10-week monitoring flag
+    final bool r1RainSatisfied = env.sevenDayRainfallMm > 50.0;
     final bool r1TrendSatisfied = env.searchTrendGrowthPercent > 30.0;
     final bool r1Triggered = r1RainSatisfied && r1TrendSatisfied;
 
@@ -48,7 +49,7 @@ class RuleEngine {
           lowerName.contains('chlorpheniramine') ||
           med.category == 'Antihistamine';
 
-      // R2: Paracetamol rule (10-week lag post rainfall threshold trigger)
+      // R2: Paracetamol rule (10-week lag post rainfall threshold trigger: 50mm over 7 days)
       if (isParacetamol) {
         final bool stockLow = med.currentStock < med.reorderThreshold;
         final bool is10WeeksElapsed = weeksElapsed >= 10;
@@ -74,20 +75,20 @@ class RuleEngine {
               timestamp: 'Today, 06:00',
               status: 'active',
               reason:
-                  'Anticipated dengue demand surge based on 10-week lag post rainfall threshold trigger.',
+                  'Anticipated dengue demand surge based on 10-week lag post rainfall threshold trigger (50 mm over 7 days).',
               currentStock: med.currentStock,
               currentReorder: med.reorderThreshold,
               recommendedReorder: recommendedReorder,
               recommendedIncreaseUnits: increaseUnits,
               academicCitation:
-                  'Rule R2: Threshold 50mm + 10wk lag. Source: Erandi et al. (2021) / Colombo Epidemiological Unit WER',
+                  'Rule R2: Threshold 50mm over 7 days + 10wk lag. Source: Erandi et al. (2021) / Colombo Epidemiological Unit WER',
               conditions: [
                 RuleConditionCheck(
-                  label: '3-Day Rainfall',
-                  actualValue: '${env.threeDayRainfallMm} mm',
-                  threshold: '> 50 mm',
-                  satisfied: env.threeDayRainfallMm > 50,
-                  description: 'Open-Meteo Colombo precipitation measurement',
+                  label: '7-Day Rainfall',
+                  actualValue: '${env.sevenDayRainfallMm} mm',
+                  threshold: '> 50 mm over 7 days',
+                  satisfied: env.sevenDayRainfallMm > 50,
+                  description: 'Open-Meteo Colombo 7-day precipitation measurement',
                 ),
                 RuleConditionCheck(
                   label: 'Weeks Since Rainfall Event',
@@ -143,13 +144,14 @@ class RuleEngine {
               recommendedReorder: recommendedReorder,
               recommendedIncreaseUnits: increaseUnits,
               academicCitation:
-                  'Rule R3: Threshold 50mm + 10wk lag. Source: Erandi et al. (2021) / SL Medical Council Guidelines',
+                  'Rule R3: Threshold 50mm over 7 days + 10wk lag. Source: Erandi et al. (2021) / SL Medical Council Guidelines',
               conditions: [
                 RuleConditionCheck(
-                  label: '3-Day Rainfall',
-                  actualValue: '${env.threeDayRainfallMm} mm',
-                  threshold: '> 50 mm',
-                  satisfied: env.threeDayRainfallMm > 50,
+                  label: '7-Day Rainfall',
+                  actualValue: '${env.sevenDayRainfallMm} mm',
+                  threshold: '> 50 mm over 7 days',
+                  satisfied: env.sevenDayRainfallMm > 50,
+                  description: 'Open-Meteo Colombo 7-day precipitation measurement',
                 ),
                 RuleConditionCheck(
                   label: 'Weeks Since Rainfall Event',
@@ -172,7 +174,7 @@ class RuleEngine {
       // R4: Antihistamines rule (fever search spike > 30% + rain > 30mm)
       if (isAntihistamine) {
         final bool feverTrendUp = env.feverSearchGrowthPercent > 30;
-        final bool rainOver30 = env.threeDayRainfallMm > 30;
+        final bool rainOver30 = env.sevenDayRainfallMm > 30;
         final bool stockLow = med.currentStock < med.reorderThreshold;
         final bool shouldTrigger = feverTrendUp && rainOver30 && stockLow;
 
@@ -211,8 +213,8 @@ class RuleEngine {
                   satisfied: feverTrendUp,
                 ),
                 RuleConditionCheck(
-                  label: '3-Day Rainfall',
-                  actualValue: '${env.threeDayRainfallMm} mm',
+                  label: '7-Day Rainfall',
+                  actualValue: '${env.sevenDayRainfallMm} mm',
                   threshold: '> 30 mm',
                   satisfied: rainOver30,
                 ),
@@ -232,7 +234,7 @@ class RuleEngine {
     String summary = 'No active dengue alert threshold triggered.';
     if (isFlagActive && weeksElapsed < 10) {
       summary =
-          'Heavy rainfall detected. 10-week lag monitoring active ($weeksElapsed/10 weeks elapsed). No alerts generated yet.';
+          'Heavy rainfall (>50mm over 7 days) detected. 10-week lag monitoring active ($weeksElapsed/10 weeks elapsed). No alerts generated yet.';
     } else if (generatedAlerts.isNotEmpty) {
       summary =
           '${generatedAlerts.length} proactive procurement alerts generated based on epidemiological triggers.';

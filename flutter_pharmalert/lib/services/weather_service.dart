@@ -6,7 +6,8 @@ import 'package:pharmalert/models/environmental_signal.dart';
 class WeatherService {
   static const String _cacheKey = 'pharmalert_flutter_weather_cache';
 
-  /// Fetches 3-day precipitation forecast for Colombo (6.93° N, 79.86° E)
+  /// Fetches 7-day precipitation forecast for Colombo (6.93° N, 79.86° E)
+  /// Calibrated to the 50 mm over 7 days epidemiological trigger threshold.
   static Future<EnvironmentalSignal> fetchColomboWeather() async {
     try {
       final uri = Uri.parse(
@@ -20,12 +21,13 @@ class WeatherService {
         final List<dynamic> precip = data['daily']?['precipitation_sum'] ?? [];
         final List<dynamic> times = data['daily']?['time'] ?? [];
 
-        final next3Days = precip.take(3).map((e) => (e as num?)?.toDouble() ?? 0.0).toList();
-        final double sum3 = next3Days.fold(0.0, (prev, element) => prev + element);
-        final double roundedSum = (sum3 * 10).round() / 10.0;
+        // Sum next 7 days of daily precipitation
+        final next7Days = precip.take(7).map((e) => (e as num?)?.toDouble() ?? 0.0).toList();
+        final double sum7 = next7Days.fold(0.0, (prev, element) => prev + element);
+        final double roundedSum = (sum7 * 10).round() / 10.0;
 
         final List<DailyRainfall> dailyRainfall = [];
-        for (int i = 0; i < next3Days.length; i++) {
+        for (int i = 0; i < next7Days.length; i++) {
           String dayLabel = 'Day ${i + 1}';
           if (i < times.length && times[i] is String) {
             try {
@@ -36,13 +38,13 @@ class WeatherService {
           }
           dailyRainfall.add(DailyRainfall(
             day: dayLabel,
-            amountMm: (next3Days[i] * 10).round() / 10.0,
+            amountMm: (next7Days[i] * 10).round() / 10.0,
           ));
         }
 
         final signal = EnvironmentalSignal(
           district: 'Colombo',
-          threeDayRainfallMm: roundedSum,
+          sevenDayRainfallMm: roundedSum,
           rainfallThresholdMm: 50.0,
           monitoringLagWeeks: 10,
           searchTrendGrowthPercent: 40.0,

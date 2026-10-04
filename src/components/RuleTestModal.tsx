@@ -12,7 +12,7 @@ export const RuleTestModal: React.FC = () => {
     {
       id: 1,
       title: 'Scenario 1: Heavy Rain + Rising Search Trend',
-      spec: 'Heavy rainfall (>50mm) + rising search trend → monitoring flag should start; no alert yet (within 10-week lag).',
+      spec: 'Heavy rainfall (>50mm over 7 days) + rising search trend → monitoring flag should start; no alert yet (within 10-week lag).',
       tag: 'Monitoring Lag Check',
     },
     {

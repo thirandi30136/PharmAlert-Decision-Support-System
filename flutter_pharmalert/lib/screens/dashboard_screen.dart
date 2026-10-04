@@ -16,7 +16,7 @@ class DashboardScreen extends StatelessWidget {
     final activeAlerts = provider.activeAlerts;
     final medicines = provider.medicines;
     final belowReorderMeds = medicines.where((m) => m.currentStock < m.reorderThreshold).toList();
-    final isHighRisk = env.threeDayRainfallMm > 50 && env.searchTrendGrowthPercent > 30;
+    final isHighRisk = env.sevenDayRainfallMm > 50 && env.searchTrendGrowthPercent > 30;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -82,6 +82,14 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Run Test Scenarios (Section 7.1)',
+            onPressed: () => showDialog(
+              context: context,
+              builder: (_) => const RuleTestDialog(),
+            ),
+            icon: const Icon(Icons.science_outlined, color: Colors.white),
+          ),
           IconButton(
             onPressed: () => provider.setTabIndex(1), // Alerts tab
             icon: Stack(
@@ -160,7 +168,11 @@ class DashboardScreen extends StatelessWidget {
                           context: context,
                           builder: (_) => const RuleTestDialog(),
                         ),
-                        child: const Text('Test Suite', style: TextStyle(color: Color(0xFF0F766E), fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: const Text('Test Runner', style: TextStyle(color: Color(0xFF0F766E), fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+                      TextButton(
+                        onPressed: provider.resetToDefault,
+                        child: const Text('Reset', style: TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -286,10 +298,10 @@ class DashboardScreen extends StatelessWidget {
                           child: _buildMetricCard(
                             icon: Icons.water_drop_outlined,
                             iconColor: const Color(0xFF0284C7),
-                            label: '3-Day Rain',
-                            value: '${env.threeDayRainfallMm.toStringAsFixed(0)}mm',
+                            label: '7-Day Rain',
+                            value: '${env.sevenDayRainfallMm.toStringAsFixed(0)}mm',
                             subtext: '> 50mm limit',
-                            isAlert: env.threeDayRainfallMm > 50,
+                            isAlert: env.sevenDayRainfallMm > 50,
                           ),
                         ),
                         const SizedBox(width: 8),

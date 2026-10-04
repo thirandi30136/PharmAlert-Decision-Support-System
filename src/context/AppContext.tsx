@@ -299,7 +299,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const runTestScenario = (scenarioId: number): { title: string; outcome: string } => {
     switch (scenarioId) {
       case 1: {
-        // Heavy rainfall (>50mm) + rising search trend -> monitoring flag should start; no alert yet.
+        // Heavy rainfall (>50mm over 7 days) + rising search trend -> monitoring flag should start; no alert yet.
         const modifiedEnv: EnvironmentalSignal = {
           ...DEFAULT_COLOMBO_ENV,
           sevenDayRainfallMm: 65,
@@ -318,7 +318,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return {
           title: 'Scenario 1 Verified',
           outcome:
-            'Rainfall 65mm (>50mm) & Trend +42% (>30%). 10-week monitoring flag STARTED. At week 2, 0 procurement alerts are issued (correct lag behavior).',
+            'Rainfall 65mm over 7 days (>50mm) & Trend +42% (>30%). 10-week monitoring flag STARTED. At week 2, 0 procurement alerts are issued (correct lag behavior).',
         };
       }
 

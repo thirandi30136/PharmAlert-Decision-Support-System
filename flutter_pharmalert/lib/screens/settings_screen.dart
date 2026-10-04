@@ -117,7 +117,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Run the 5 Section 7.1 validation scenarios (Rainfall spike, 5-week lag, 10-week peak, Normal, Antihistamine)',
+                    'Run the 5 Section 7.1 validation scenarios (Heavy rain lag, week-10 surge, false-positive buffer, alert actioning, offline resilience)',
                     style: TextStyle(color: Color(0xFFCCFBF1), fontSize: 12),
                   ),
                   const SizedBox(height: 12),
@@ -172,7 +172,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                  _buildParamRow('Rainfall Trigger (R1)', '50 mm over 3 days'),
+                  _buildParamRow('Rainfall alert threshold (R1)', '50 mm over 7 days'),
                   _buildParamRow('Epidemic Lag Window (R2)', '10 weeks post-rainfall'),
                   _buildParamRow('Search Spike Threshold', '+30% search interest'),
                   _buildParamRow('Recommended Paracetamol Buffer', '+20% safety stock'),
