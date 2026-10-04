@@ -44,7 +44,7 @@ export interface AlertItem {
 
 export interface EnvironmentalSignal {
   district: string;
-  threeDayRainfallMm: number;
+  sevenDayRainfallMm: number;
   rainfallThresholdMm: number; // 50mm
   monitoringLagWeeks: number; // 10 weeks
   searchTrendGrowthPercent: number; // e.g. +40%
