@@ -45,16 +45,16 @@ export async function fetchColomboWeather(): Promise<{
     const dates: string[] = json?.daily?.time || [];
 
     // Sum next 3 days
-    const next3Days = precipitation.slice(0, 3);
-    const sumNext3 = next3Days.reduce((acc, curr) => acc + (curr || 0), 0);
-    const roundedSum = Math.round(sumNext3 * 10) / 10;
+    const next7Days = precipitation.slice(0, 7);
+    const sumNext7 = next7Days.reduce((acc, curr) => acc + (curr || 0), 0);
+    const roundedSum = Math.round(sumNext7 * 10) / 10;
 
-    const dayLabels = dates.slice(0, 3).map((dStr) => {
+    const dayLabels = dates.slice(0, 7).map((dStr) => {
       const d = new Date(dStr);
       return d.toLocaleDateString('en-US', { weekday: 'short' });
     });
 
-    const dailyRainfall = next3Days.map((amt, idx) => ({
+    const dailyRainfall = next7Days.map((amt, idx) => ({
       day: dayLabels[idx] || `D${idx + 1}`,
       amountMm: Math.round((amt || 0) * 10) / 10,
     }));
@@ -63,7 +63,7 @@ export async function fetchColomboWeather(): Promise<{
     const mergedData: EnvironmentalSignal = {
       ...DEFAULT_COLOMBO_ENV,
       threeDayRainfallMm: roundedSum > 0 ? roundedSum : 60,
-      dailyRainfall: dailyRainfall.length === 3 ? dailyRainfall : DEFAULT_COLOMBO_ENV.dailyRainfall,
+      dailyRainfall: dailyRainfall.length === 7 ? dailyRainfall : DEFAULT_COLOMBO_ENV.dailyRainfall,
       lastUpdated: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       dataSource: 'Live Open-Meteo API (lat 6.93, lon 79.86)',
     };
