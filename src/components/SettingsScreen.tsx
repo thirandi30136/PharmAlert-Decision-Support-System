@@ -198,7 +198,7 @@ export const SettingsScreen: React.FC = () => {
           <div className="divide-y divide-slate-100 text-xs">
             <div className="py-2 flex items-center justify-between">
               <span className="text-slate-500 font-medium">Rainfall alert threshold (R1)</span>
-              <span className="font-extrabold text-slate-800">50 mm over 3 days</span>
+              <span className="font-extrabold text-slate-800">50 mm over 7 days</span>
             </div>
             <div className="py-2 flex items-center justify-between">
               <span className="text-slate-500 font-medium">Epidemic surveillance lag (R2)</span>
