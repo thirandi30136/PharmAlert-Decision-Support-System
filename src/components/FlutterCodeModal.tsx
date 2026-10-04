@@ -209,7 +209,7 @@ class RuleEngine {
     int? forcedWeeksElapsed,
   }) {
     final List<AlertItem> generatedAlerts = [];
-    final bool r1Rain = env.threeDayRainfallMm > 50.0;
+    final bool r1Rain = env.sevenDayRainfallMm > 50.0;
     final bool r1Trend = env.searchTrendGrowthPercent > 30.0;
     final bool isFlagActive = forcedMonitoringFlag ?? (r1Rain && r1Trend);
     final int weeksElapsed = forcedWeeksElapsed ?? env.monitoringFlagWeeksElapsed;
@@ -262,7 +262,7 @@ class WeatherService {
       'https://api.open-meteo.com/v1/forecast?latitude=6.93&longitude=79.86&daily=precipitation_sum&timezone=Asia%2FColombo',
     );
     final response = await http.get(uri).timeout(const Duration(seconds: 5));
-    // Parse next 3 days rainfall summation...
+    // Parse next 7 days rainfall summation...
     return EnvironmentalSignal(/* ... */);
   }
 }`
