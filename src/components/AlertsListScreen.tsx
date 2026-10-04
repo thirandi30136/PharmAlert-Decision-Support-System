@@ -92,7 +92,7 @@ export const AlertsListScreen: React.FC = () => {
           </p>
 
           <div className="flex items-center justify-between pt-1 text-[11px] text-teal-200 font-medium">
-            <span>Rainfall: {environmentalSignal.threeDayRainfallMm}mm / 3-days</span>
+            <span>Rainfall: {environmentalSignal.threeDayRainfallMm}mm / 7-days</span>
             <span>Search queries: +{environmentalSignal.searchTrendGrowthPercent}%</span>
           </div>
         </div>
