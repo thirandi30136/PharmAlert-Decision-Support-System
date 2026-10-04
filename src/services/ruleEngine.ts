@@ -21,7 +21,7 @@ export function evaluateRules(
 ): EvaluationResult {
   const generatedAlerts: AlertItem[] = [];
 
-  // R1: 3-day rainfall > 50mm AND search trend up > 30% -> Start 10-week monitoring flag
+  // R1: 7-day rainfall > 50mm AND search trend up > 30% -> Start 10-week monitoring flag
   const r1RainSatisfied = env.threeDayRainfallMm > 50;
   const r1TrendSatisfied = env.searchTrendGrowthPercent > 30;
   const r1Triggered = r1RainSatisfied && r1TrendSatisfied;
@@ -81,7 +81,7 @@ export function evaluateRules(
           academicCitation: 'Rule R2: Threshold 50mm + 10wk lag. Source: Erandi et al. (2021) / Colombo Epidemiological Unit WER',
           conditions: [
             {
-              label: '3-Day Rainfall',
+              label: '7-Day Rainfall',
               actualValue: `${env.threeDayRainfallMm} mm`,
               threshold: '> 50 mm',
               satisfied: env.threeDayRainfallMm > 50,
@@ -137,7 +137,7 @@ export function evaluateRules(
           academicCitation: 'Rule R3: Threshold 50mm + 10wk lag. Source: Erandi et al. (2021) / SL Medical Council Guidelines',
           conditions: [
             {
-              label: '3-Day Rainfall',
+              label: '7-Day Rainfall',
               actualValue: `${env.threeDayRainfallMm} mm`,
               threshold: '> 50 mm',
               satisfied: env.threeDayRainfallMm > 50,
@@ -197,7 +197,7 @@ export function evaluateRules(
               satisfied: feverTrendUp,
             },
             {
-              label: '3-Day Rainfall',
+              label: '7-Day Rainfall',
               actualValue: `${env.threeDayRainfallMm} mm`,
               threshold: '> 30 mm',
               satisfied: rainOver30,
