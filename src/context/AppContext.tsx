@@ -302,7 +302,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // Heavy rainfall (>50mm) + rising search trend -> monitoring flag should start; no alert yet.
         const modifiedEnv: EnvironmentalSignal = {
           ...DEFAULT_COLOMBO_ENV,
-          threeDayRainfallMm: 65,
+          sevenDayRainfallMm: 65,
           searchTrendGrowthPercent: 42,
           activeMonitoringFlag: true,
           monitoringFlagWeeksElapsed: 2, // only 2 weeks elapsed (lag is 10 weeks)
