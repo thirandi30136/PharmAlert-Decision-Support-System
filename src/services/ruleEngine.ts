@@ -22,7 +22,8 @@ export function evaluateRules(
   const generatedAlerts: AlertItem[] = [];
 
   // R1: 7-day rainfall > 50mm AND search trend up > 30% -> Start 10-week monitoring flag
-  const r1RainSatisfied = env.threeDayRainfallMm > 50;
+  const rainfall = env.sevenDayRainfallMm ?? env.threeDayRainfallMm ?? 0;
+  const r1RainSatisfied = rainfall > 50;
   const r1TrendSatisfied = env.searchTrendGrowthPercent > 30;
   const r1Triggered = r1RainSatisfied && r1TrendSatisfied;
 
@@ -82,9 +83,9 @@ export function evaluateRules(
           conditions: [
             {
               label: '7-Day Rainfall',
-              actualValue: `${env.threeDayRainfallMm} mm`,
+              actualValue: `${rainfall} mm`,
               threshold: '> 50 mm over 7 days',
-              satisfied: env.threeDayRainfallMm > 50,
+              satisfied: rainfall > 50,
               description: 'Open-Meteo Colombo 7-day precipitation measurement',
             },
             {
@@ -138,9 +139,9 @@ export function evaluateRules(
           conditions: [
             {
               label: '7-Day Rainfall',
-              actualValue: `${env.threeDayRainfallMm} mm`,
+              actualValue: `${rainfall} mm`,
               threshold: '> 50 mm over 7 days',
-              satisfied: env.threeDayRainfallMm > 50,
+              satisfied: rainfall > 50,
             },
             {
               label: 'Weeks Since Rainfall Event',
@@ -162,7 +163,7 @@ export function evaluateRules(
     // R4: Fever search volume up > 30% AND rainfall > 30mm -> Increase Cetirizine/antihistamine reorder by 15%
     if (isAntihistamine) {
       const feverTrendUp = env.feverSearchGrowthPercent > 30;
-      const rainOver30 = env.threeDayRainfallMm > 30;
+      const rainOver30 = rainfall > 30;
       const stockLow = med.currentStock < med.reorderThreshold;
       const shouldTrigger = feverTrendUp && rainOver30 && stockLow;
 
@@ -198,7 +199,7 @@ export function evaluateRules(
             },
             {
               label: '7-Day Rainfall',
-              actualValue: `${env.threeDayRainfallMm} mm`,
+              actualValue: `${rainfall} mm`,
               threshold: '> 30 mm',
               satisfied: rainOver30,
             },

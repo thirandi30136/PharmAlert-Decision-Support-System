@@ -12,17 +12,21 @@ class RuleTestDialog extends StatefulWidget {
 
 class _RuleTestDialogState extends State<RuleTestDialog> {
   TestScenarioResult? _activeTestResult;
+  int? _lastRanScenarioId;
+  final ScrollController _scrollController = ScrollController();
 
   final List<Map<String, dynamic>> _scenarios = const [
     {
       'id': 1,
       'title': 'Scenario 1: Heavy Rain + Rising Search Trend',
       'spec':
-          'Heavy rainfall (>50mm over 7 days) + rising search trend → monitoring flag should start; no alert yet (within 10-week lag).',
+          'Heavy rainfall (>50mm over 7 days) + rising search trend → monitoring flag starts; no alert yet (within 10-week lag).',
       'tag': 'Monitoring Lag Check',
       'condition': '7-day rainfall > 50mm AND trend > 30%',
       'values': 'Rainfall 65mm over 7 days | Trend +42%',
       'expected': '10-week monitoring starts (Started), 0 alerts at week 2',
+      'explanation':
+          'Note: 0 alerts at Week 2 is the expected epidemiological behavior. Dengue virus replication and mosquito population spikes take ~10 weeks post-rainfall to manifest as hospital case surges.',
     },
     {
       'id': 2,
@@ -33,6 +37,8 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
       'condition': '10 weeks post-flag AND stock < reorder level',
       'values': 'Week 10 | Stock: Paracetamol (450 < 500), ORS (320 < 400) | Rain 60mm/7d',
       'expected': 'Alerts generated (+20% Paracetamol, +30% ORS recommended)',
+      'explanation':
+          'Week 10 reached: Paracetamol reorder point is bumped from 500 to 600 units (+20%), and ORS is bumped from 400 to 520 units (+30%).',
     },
     {
       'id': 3,
@@ -43,6 +49,8 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
       'condition': 'Week 10 post-flag AND stock >= reorder level',
       'values': 'Paracetamol 900 > 500, ORS 900 > 400',
       'expected': 'No false alert triggered (0 alerts generated)',
+      'explanation':
+          'Prevents overstocking: If pharmacy already has ample buffer stock on shelf, no unnecessary procurement orders are triggered.',
     },
     {
       'id': 4,
@@ -53,6 +61,8 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
       'condition': 'User approves active outbreak alert recommendation',
       'values': 'Apply surge reorder to inventory threshold',
       'expected': 'Inventory threshold updated & alert marked "actioned"',
+      'explanation':
+          'Simulates pharmacist clicking "Approve Recommendation". Directly adjusts inventory target and transitions alert to actioned.',
     },
     {
       'id': 5,
@@ -63,8 +73,37 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
       'condition': 'Open-Meteo REST service connection fails or offline',
       'values': 'Network request timed out / disconnected',
       'expected': 'Cached data displayed gracefully with error notification',
+      'explanation':
+          'Tests network tolerance: If Open-Meteo or Google Trends fails, the app uses cached local storage data without freezing or crashing.',
     },
   ];
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _runScenario(AppProvider provider, int scenarioId) {
+    final res = provider.runTestScenario(scenarioId);
+    setState(() {
+      _activeTestResult = res;
+      _lastRanScenarioId = scenarioId;
+    });
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Scenario $scenarioId Executed: ${res.title}',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        ),
+        backgroundColor: const Color(0xFF0F766E),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +114,7 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       clipBehavior: Clip.antiAlias,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 720),
+        constraints: const BoxConstraints(maxWidth: 540, maxHeight: 750),
         color: Colors.white,
         child: Column(
           children: [
@@ -132,9 +171,10 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
             // Scrollable Content
             Expanded(
               child: ListView(
+                controller: _scrollController,
                 padding: const EdgeInsets.all(18),
                 children: [
-                  // Verification Result Banner if active
+                  // Global active result banner at top
                   if (_activeTestResult != null) ...[
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),
@@ -172,7 +212,7 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Text(
-                                  'PASSED',
+                                  'PASSED & ACTIVE',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w900,
@@ -194,32 +234,53 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
                           const SizedBox(height: 10),
                           const Divider(color: Color(0xFFA7F3D0), height: 1),
                           const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: () {
-                                provider.setTabIndex(0); // Switch to Dashboard
-                                Navigator.pop(context);
-                              },
-                              icon: const Icon(
-                                Icons.arrow_forward_rounded,
-                                size: 14,
-                                color: Color(0xFF0F766E),
-                              ),
-                              label: const Text(
-                                'View on Dashboard →',
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Active Alerts: ${provider.alerts.length}',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F766E),
+                                  color: provider.alerts.isNotEmpty
+                                      ? const Color(0xFF0F766E)
+                                      : const Color(0xFF64748B),
                                 ),
                               ),
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              Row(
+                                children: [
+                                  if (provider.alerts.isNotEmpty)
+                                    TextButton(
+                                      onPressed: () {
+                                        provider.setTabIndex(1); // Switch to Alerts
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text(
+                                        'View Alerts Tab →',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F766E),
+                                        ),
+                                      ),
+                                    ),
+                                  TextButton(
+                                    onPressed: () {
+                                      provider.setTabIndex(0); // Switch to Dashboard
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text(
+                                      'View Dashboard →',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0F766E),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ),
@@ -229,14 +290,18 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
                   // Scenarios list
                   ..._scenarios.map((sc) {
                     final int scenarioId = sc['id'] as int;
+                    final bool isCurrentlyActive = _lastRanScenarioId == scenarioId;
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: isCurrentlyActive ? const Color(0xFFF0FDFA) : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        border: Border.all(
+                          color: isCurrentlyActive ? const Color(0xFF14B8A6) : const Color(0xFFE2E8F0),
+                          width: isCurrentlyActive ? 1.5 : 1.0,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,10 +312,12 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
                               Expanded(
                                 child: Text(
                                   sc['title'] as String,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
-                                    color: Color(0xFF0F172A),
+                                    color: isCurrentlyActive
+                                        ? const Color(0xFF0F766E)
+                                        : const Color(0xFF0F172A),
                                   ),
                                 ),
                               ),
@@ -258,9 +325,11 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF0FDFA),
+                                  color: isCurrentlyActive
+                                      ? const Color(0xFFCCFBF1)
+                                      : const Color(0xFFF0FDFA),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: const Color(0xFFCCFBF1)),
+                                  border: Border.all(color: const Color(0xFF99F6E4)),
                                 ),
                                 child: Text(
                                   sc['tag'] as String,
@@ -332,35 +401,106 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 3),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Expected: ',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF475569),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        sc['expected'] as String,
+                                        style: const TextStyle(fontSize: 10, color: Color(0xFF16A34A), fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: FilledButton.icon(
-                              onPressed: () {
-                                final res = provider.runTestScenario(scenarioId);
-                                setState(() {
-                                  _activeTestResult = res;
-                                });
-                              },
-                              icon: const Icon(Icons.play_arrow_rounded, size: 16),
-                              label: Text('Run Scenario $scenarioId'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF0F766E),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                textStyle: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                elevation: 0,
+
+                          // If this scenario is currently running, show inline confirmation
+                          if (isCurrentlyActive && _activeTestResult != null) ...[
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFECFDF5),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFA7F3D0)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.check_circle, color: Color(0xFF16A34A), size: 14),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Verified: ${_activeTestResult!.title}',
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    sc['explanation'] as String,
+                                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF334155), height: 1.35),
+                                  ),
+                                ],
                               ),
                             ),
+                          ],
+
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              if (isCurrentlyActive)
+                                const Row(
+                                  children: [
+                                    Icon(Icons.check_circle_rounded, color: Color(0xFF0F766E), size: 16),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'ACTIVE STATE',
+                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
+                                    ),
+                                  ],
+                                )
+                              else
+                                const SizedBox.shrink(),
+                              FilledButton.icon(
+                                onPressed: () => _runScenario(provider, scenarioId),
+                                icon: Icon(
+                                  isCurrentlyActive ? Icons.refresh : Icons.play_arrow_rounded,
+                                  size: 16,
+                                ),
+                                label: Text(
+                                  isCurrentlyActive ? 'Re-run Scenario $scenarioId' : 'Run Scenario $scenarioId',
+                                ),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: isCurrentlyActive
+                                      ? const Color(0xFF0D5D56)
+                                      : const Color(0xFF0F766E),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  textStyle: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  elevation: 0,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -385,7 +525,16 @@ class _RuleTestDialogState extends State<RuleTestDialog> {
                       provider.resetToDefault();
                       setState(() {
                         _activeTestResult = null;
+                        _lastRanScenarioId = null;
                       });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Reset to default Colombo research benchmark dataset'),
+                          backgroundColor: Color(0xFF334155),
+                          duration: Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
                     },
                     icon: const Icon(Icons.refresh, size: 14, color: Color(0xFF64748B)),
                     label: const Text(

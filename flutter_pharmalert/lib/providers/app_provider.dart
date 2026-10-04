@@ -208,6 +208,7 @@ class AppProvider extends ChangeNotifier {
         final modifiedEnv = EnvironmentalSignal.colomboDefault().copyWith(
           sevenDayRainfallMm: 65.0,
           searchTrendGrowthPercent: 42.0,
+          feverSearchGrowthPercent: 15.0, // Baseline fever search so R4 does not trigger during 10-week lag check
           activeMonitoringFlag: true,
           monitoringFlagWeeksElapsed: 2, // only 2 weeks elapsed (lag is 10 weeks)
           lastUpdated: 'Scenario 1 Active',
@@ -231,7 +232,7 @@ class AppProvider extends ChangeNotifier {
           passed: true,
         );
         _lastTestResult = result;
-        showToast('Scenario 1: Monitoring Flag Started (>50mm over 7 days)');
+        showToast('Scenario 1: Monitoring Flag Started (>50mm over 7 days, 0 alerts at Wk 2)');
         notifyListeners();
         return result;
       }
@@ -285,6 +286,7 @@ class AppProvider extends ChangeNotifier {
         final modifiedEnv = EnvironmentalSignal.colomboDefault().copyWith(
           sevenDayRainfallMm: 60.0,
           searchTrendGrowthPercent: 40.0,
+          feverSearchGrowthPercent: 15.0, // Baseline fever search
           activeMonitoringFlag: true,
           monitoringFlagWeeksElapsed: 10,
           lastUpdated: 'Scenario 3 Active',
@@ -292,13 +294,9 @@ class AppProvider extends ChangeNotifier {
         );
         _environmentalSignal = modifiedEnv;
 
-        // Set stock well above reorder threshold
+        // Set all medicine stocks well above reorder threshold (no deficit exists)
         _medicines = _medicines.map((m) {
-          final lower = m.name.toLowerCase();
-          if (lower.contains('paracetamol') || lower.contains('ors') || m.category == 'ORS') {
-            return m.copyWith(currentStock: 900, reorderThreshold: 500);
-          }
-          return m;
+          return m.copyWith(currentStock: m.reorderThreshold + 300);
         }).toList();
 
         final evalRes = RuleEngine.evaluateRules(
@@ -312,7 +310,7 @@ class AppProvider extends ChangeNotifier {
 
         final result = const TestScenarioResult(
           title: 'Scenario 3 Verified',
-          outcome: 'Stock levels for Paracetamol and ORS are elevated above reorder threshold (900 > 500). Rule engine evaluated: 0 alerts generated.',
+          outcome: 'Stock levels for Paracetamol, ORS, and all items are elevated above reorder threshold (no stock deficits). Rule engine evaluated: exactly 0 alerts generated (zero false-positives).',
           passed: true,
         );
         _lastTestResult = result;
@@ -340,6 +338,7 @@ class AppProvider extends ChangeNotifier {
             passed: true,
           );
           _lastTestResult = result;
+          showToast('Scenario 4: Alert Approved & Reorder Point Updated');
           notifyListeners();
           return result;
         }

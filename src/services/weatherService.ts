@@ -4,6 +4,7 @@ const STORAGE_KEY = 'pharmalert_weather_cache';
 
 export const DEFAULT_COLOMBO_ENV: EnvironmentalSignal = {
   district: 'Colombo',
+  sevenDayRainfallMm: 60,
   threeDayRainfallMm: 60,
   rainfallThresholdMm: 50,
   monitoringLagWeeks: 10,
@@ -66,6 +67,7 @@ export async function fetchColomboWeather(): Promise<{
     // If live precipitation is low (e.g. dry season in real-time), keep realistic Colombo dengue seasonal signal for research fidelity if user wants to test, or combine
     const mergedData: EnvironmentalSignal = {
       ...DEFAULT_COLOMBO_ENV,
+      sevenDayRainfallMm: roundedSum > 0 ? roundedSum : 60,
       threeDayRainfallMm: roundedSum > 0 ? roundedSum : 60,
       dailyRainfall: dailyRainfall.length === 7 ? dailyRainfall : DEFAULT_COLOMBO_ENV.dailyRainfall,
       lastUpdated: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
