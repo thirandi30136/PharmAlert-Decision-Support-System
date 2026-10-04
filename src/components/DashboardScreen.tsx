@@ -199,7 +199,7 @@ export const DashboardScreen: React.FC = () => {
             <div className="bg-white/90 backdrop-blur-xs rounded-xl p-2 border border-red-200/80 shadow-2xs">
               <div className="flex items-center text-slate-500 text-[10px] font-medium mb-0.5">
                 <CloudRain className="w-3 h-3 text-[#0284C7] mr-1 shrink-0" />
-                <span>3-Day Rain</span>
+                <span>7-Day Rain</span>
               </div>
               <span className="text-xs font-bold text-slate-900 block">
                 {environmentalSignal.threeDayRainfallMm}mm
@@ -397,10 +397,10 @@ export const DashboardScreen: React.FC = () => {
                   </span>
                   <span className="text-xs font-semibold text-slate-500">mm</span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-medium block mb-2">next 3 days</span>
+                <span className="text-[10px] text-slate-400 font-medium block mb-2">next 7 days</span>
               </div>
 
-              {/* 3-Day Bar Chart */}
+              {/* 7-Day Bar Chart */}
               <div className="flex items-end justify-between h-16 pt-2 px-1 border-t border-sky-100">
                 {environmentalSignal.dailyRainfall.map((d, i) => {
                   const maxRain = 35;
