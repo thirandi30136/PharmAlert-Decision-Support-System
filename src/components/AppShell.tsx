@@ -48,7 +48,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   }, []);
 
   const activeAlerts = alerts.filter((a) => a.status === 'active');
-  const isDengueCritical = environmentalSignal.threeDayRainfallMm > 50 && environmentalSignal.searchTrendGrowthPercent > 30;
+  const isDengueCritical = environmentalSignal.sevenDayRainfallMm > 50 && environmentalSignal.searchTrendGrowthPercent > 30;
 
   // Finish border colors
   const finishStyles = {
@@ -227,7 +227,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
                           <div>
                             <div className="font-bold text-white leading-tight">Colombo Dengue Alert</div>
                             <div className="text-[9px] text-slate-300">
-                              {environmentalSignal.threeDayRainfallMm}mm Rain · +{environmentalSignal.searchTrendGrowthPercent}% Spike
+                              {environmentalSignal.sevenDayRainfallMm}mm Rain · +{environmentalSignal.searchTrendGrowthPercent}% Spike
                             </div>
                           </div>
                         </div>
